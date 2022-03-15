@@ -33,6 +33,25 @@ const addBookHandler = (request, h) => {
     updatedAt,
   };
 
+  if (name === undefined) {
+    const response = h.response({
+      status: 'fail',
+      message: 'Gagal menambahkan buku. Mohon isi nama buku',
+    });
+    response.code(400);
+    return response;
+  }
+
+  if (readPage > pageCount) {
+    const response = h.response({
+      status: 'fail',
+      // eslint-disable-next-line max-len
+      message: 'Gagal menambahkan buku. readPage tidak boleh lebih besar dari pageCount',
+    });
+    response.code(400);
+    return response;
+  }
+
   books.push(newBook);
 
   const isSuccess = books.filter((book) => book.id === id).length > 0;
@@ -43,25 +62,9 @@ const addBookHandler = (request, h) => {
       message: 'Buku berhasil ditambahkan',
       data: {
         bookId: id,
-        // isi: {newBook},
       },
     });
     response.code(201);
-    return response;
-  } else if (name === undefined) {
-    const response = h.response({
-      status: 'fail',
-      message: 'Gagal menambahkan buku. Mohon isi nama buku',
-    });
-    response.code(400);
-    return response;
-  } else if (readPage > pageCount) {
-    const response = h.response({
-      status: 'fail',
-      // eslint-disable-next-line max-len
-      message: 'Gagal menambahkan buku. readPage tidak boleh lebih besar dari pageCount',
-    });
-    response.code(400);
     return response;
   }
 
@@ -73,4 +76,30 @@ const addBookHandler = (request, h) => {
   return response;
 };
 
-module.exports = {addBookHandler};
+const getAllBooksHandler = (request, h) => {
+  const {name, reading, finished} = request.query;
+  const filteredBook = books.filter((b) => {
+    if (name) return b.name.toLowerCase().includes(name.toLowerCase());
+    if (reading) {
+      // eslint-disable-next-line max-len
+      return (reading === '0' || reading === '1') ? b.reading === (reading === '1') : b;
+    }
+    if (finished) {
+      // eslint-disable-next-line max-len
+      return (finished === '0' || finished === '1') ? b.finished === (finished === '1') : b;
+    }
+    return b;
+  });
+  return h.response({
+    status: 'success',
+    data: {
+      books: filteredBook.map((book) => ({
+        id: book.id,
+        name: book.name,
+        publisher: book.publisher,
+      })),
+    },
+  });
+};
+
+module.exports = {addBookHandler, getAllBooksHandler};
